@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.dump-config.txt
+.profile-backup/
+*.tgz
+.DS_Store

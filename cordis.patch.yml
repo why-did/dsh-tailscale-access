@@ -1,0 +1,12 @@
+# dsh-tailscale-access bundle layer.
+#
+# Inserts the Remote Access host plugin row. All user-facing configuration lives
+# in the plugin's settings section (`remote-access`) so this row stays minimal:
+# a value written here would sit *below* the settings layer and look ignored
+# (the settings layer wins over this row).
+#
+# The row `id` is the settings namespace and the profile's stable handle; the
+# `name` must stay the published package name.
+- insert:
+    - id: remote-access
+      name: dsh-tailscale-access
