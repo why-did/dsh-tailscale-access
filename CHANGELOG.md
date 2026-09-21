@@ -97,6 +97,11 @@ HTTP routes and state files keep the `remote-access` name.
   the command that actually applies. Reported by a macOS user.
 - The client panel's static fallback no longer pretends to know how to start a
   daemon; the host always supplies the platform-correct command with the error.
+- **"Restart tunnel" is disabled while the master switch is off.** Restart tears
+  the entry down and rebuilds it, and with `enabled: false` the host returns
+  before it starts anything, so the click looked like a no-op. The button now
+  says why instead of pretending. With the switch on it stays available in every
+  phase — that is what makes it the retry path after a failure.
 
 ### Known limitations
 

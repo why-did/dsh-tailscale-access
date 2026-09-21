@@ -1185,3 +1185,35 @@ test('quick mode is not offered in the panel while it is under test', async () =
 	assert.ok(textOf(tree).includes('仍在测试中'), 'and the testing note explains why it is not offered')
 	assert.equal(findAll(tree, (item) => item.props?.['data-ra-input'] === 'cloudflaredPath').length, 1, 'its cloudflared path field returns with it')
 })
+
+test('restart is offered only while the entry is enabled', async () => {
+	const base = { mode: 'tailscale', phase: 'stopped', clients: [], updatedAt: Date.now() }
+	let enabled = false
+	const env = createEnvironment(() => ({
+		ok: true, status: 200,
+		json: async () => ({ ...base, enabled, config: { enabled, mode: 'tailscale', port: 8787, passwordSet: false, configOverridden: true } }),
+	}))
+	const { records, fakeRequire, runtime } = await loadBundle({ env })
+	const exports = records[0].factory(fakeRequire)
+	const ctx = createCtx()
+	exports.apply(ctx)
+	ctx.injections[0].callback()
+	const Card = ctx.registrations[0].component
+
+	let tree = runtime.render(Card({ view: 'page' }))
+	await settle()
+	tree = runtime.render(Card({ view: 'page' }))
+	let restart = findByProp(tree, 'data-ra-action', 'restart')
+	assert.equal(restart.props.disabled, true, 'a stopped entry has nothing to restart')
+	assert.ok(textOf(tree).includes('总开关未打开'), 'and the card says why instead of doing nothing')
+
+	// The retry case: enabled but failed. This is exactly when restart matters.
+	enabled = true
+	const [listener] = [...env.listeners.get('visibilitychange')]
+	listener()
+	await settle()
+	tree = runtime.render(Card({ view: 'page' }))
+	restart = findByProp(tree, 'data-ra-action', 'restart')
+	assert.equal(restart.props.disabled, false, 'an enabled entry can always be rebuilt')
+	assert.equal(textOf(tree).includes('总开关未打开'), false)
+})
