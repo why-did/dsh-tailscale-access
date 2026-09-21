@@ -309,11 +309,18 @@ curl -fsSL https://tailscale.com/install.sh | sh   # Linux
 brew install tailscale                             # macOS
 winget install --exact --id Tailscale.Tailscale    # Windows
 
-sudo systemctl enable --now tailscaled             # daemon not running
+sudo systemctl enable --now tailscaled             # daemon not running (Linux)
+brew services start tailscale                      # daemon not running (macOS, Homebrew)
+open -a Tailscale                                  # daemon not running (macOS, app bundle)
+Start-Service Tailscale                            # daemon not running (Windows)
 sudo tailscale up                                  # not logged in
 tailscale status                                   # confirm the node
 tailscale ip -4                                    # the node's tailnet address
 ```
+
+The card reports the command that applies to the machine it runs on — systemd on
+Linux (unit `tailscaled`), `brew services` or the app bundle on macOS, a Windows
+service on Windows — so copy it straight from the hint.
 
 When tailscale provides a login URL, the hint shown by the card contains it. The
 card distinguishes installed, running, logged in and operator permission, and

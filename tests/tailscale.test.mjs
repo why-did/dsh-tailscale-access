@@ -17,6 +17,7 @@ import {
   serveReset,
   serveStatus,
   stripTrailingDot,
+  startDaemonHint,
 } from '../lib/tailscale.js'
 
 const BIN = '/fake/tailscale'
@@ -322,4 +323,39 @@ test('probe: an unreadable prefs document stays silent instead of warning', asyn
   })
   const result = await probe({ bin: BIN, run })
   assert.equal(result.operator, undefined, 'unknown must not become a false warning')
+})
+
+test('startDaemonHint: each platform gets the command that actually works there', () => {
+  const linux = startDaemonHint({ platform: 'linux', bin: '/usr/bin/tailscale' })
+  assert.equal(linux.command, 'sudo systemctl enable --now tailscaled', 'the systemd unit is tailscaled, not tailscale')
+
+  // macOS ships the daemon either inside the app bundle or as a Homebrew service;
+  // the resolved binary path is what tells them apart.
+  const macApp = startDaemonHint({ platform: 'darwin', bin: '/Applications/Tailscale.app/Contents/MacOS/Tailscale' })
+  assert.equal(macApp.command, 'open -a Tailscale')
+  assert.match(macApp.hint, /Tailscale\.app/)
+
+  const macBrew = startDaemonHint({ platform: 'darwin', bin: '/opt/homebrew/bin/tailscale' })
+  assert.equal(macBrew.command, 'brew services start tailscale')
+  assert.equal(/systemctl/.test(macBrew.command + macBrew.hint), false, 'no Linux advice on macOS')
+
+  const windows = startDaemonHint({ platform: 'win32', bin: 'C:\\Program Files\\Tailscale\\tailscale.exe' })
+  assert.equal(windows.command, 'Start-Service Tailscale')
+
+  // Unknown platform / no binary still yields the Linux default rather than nothing.
+  assert.equal(startDaemonHint({}).command, 'sudo systemctl enable --now tailscaled')
+})
+
+test('probe: a daemon that is not running reports the platform command', async () => {
+  const unreachable = runner({
+    'status --json': { stdout: '', stderr: 'failed to connect to local tailscaled; it is running on another port', code: 1 },
+  })
+  const mac = await probe({ bin: BIN, run: unreachable.run, platform: 'darwin' })
+  assert.equal(mac.running, false)
+  assert.equal(mac.error.code, CODES.NOT_RUNNING)
+  assert.equal(mac.error.command, 'brew services start tailscale', 'a Mac user gets the Homebrew command, not systemctl')
+  assert.equal(/systemctl/.test(mac.error.hint), false)
+
+  const linux = await probe({ bin: BIN, run: unreachable.run })
+  assert.equal(linux.error.command, 'sudo systemctl enable --now tailscaled', 'Linux keeps the systemd unit name')
 })
