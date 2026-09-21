@@ -87,6 +87,17 @@ HTTP routes and state files keep the `remote-access` name.
 - Logs, the status file and the JSON status payload never contain a token,
   cookie or password.
 
+### Fixed
+
+- **The "daemon is not running" hint is now platform-aware.** It used to hand
+  every machine `sudo systemctl enable --now tailscaled` — wrong on macOS
+  (Homebrew: `brew services start tailscale`; app bundle: `open -a Tailscale`)
+  and wrong on Windows. The probe takes the platform (and the resolved CLI path,
+  which is what tells the macOS app bundle from a Homebrew install) and reports
+  the command that actually applies. Reported by a macOS user.
+- The client panel's static fallback no longer pretends to know how to start a
+  daemon; the host always supplies the platform-correct command with the error.
+
 ### Known limitations
 
 - **`quick` mode is still under test and is not offered in the panel.** The

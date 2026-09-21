@@ -187,7 +187,10 @@ curl -fsSL https://tailscale.com/install.sh | sh   # Linux
 brew install tailscale                             # macOS
 winget install --exact --id Tailscale.Tailscale    # Windows
 
-sudo systemctl enable --now tailscaled             # 守护进程没跑
+sudo systemctl enable --now tailscaled             # 守护进程没跑（Linux）
+brew services start tailscale                      # 守护进程没跑（macOS，Homebrew）
+open -a Tailscale                                  # 守护进程没跑（macOS，应用包）
+Start-Service Tailscale                            # 守护进程没跑（Windows）
 sudo tailscale up                                  # 没登录
 tailscale status                                   # 确认节点状态
 tailscale ip -4                                    # 节点的 tailnet 地址
